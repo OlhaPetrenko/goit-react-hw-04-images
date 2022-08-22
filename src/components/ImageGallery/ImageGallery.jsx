@@ -3,6 +3,7 @@ import { Component } from 'react';
 
 import ImageGalletyItem from '../ImageGalleryItem/ImageGalleryItem';
 import Loader from '../Loader/Loader';
+
 import s from './ImageGallery.module.css';
 
 class ImageGallery extends Component {
@@ -19,17 +20,14 @@ class ImageGallery extends Component {
   componentDidUpdate(prevProps, prevState) {
     const { query, page, perPage } = this.props;
     const total = perPage * this.props.page;
-    //   console.log('total', total);
 
-    if (prevProps.query !== this.props.query) {
+    if (prevProps.query !== query) {
       this.setState({ pictures: [] });
     }
 
-    if (
-      prevProps.query !== this.props.query ||
-      prevProps.page !== this.props.page
-    ) {
+    if (prevProps.query !== query || prevProps.page !== page) {
       this.setState({ status: 'pending' });
+      this.props.hideBtn();
       fetch(
         `https://pixabay.com/api/?q=${query}&page=${page}&key=28740623-faa9572de77969117d7ae64be&image_type=photo&orientation=horizontal&per_page=${perPage}`
       )
@@ -43,9 +41,6 @@ class ImageGallery extends Component {
         })
         .then(pictures => {
           if (pictures.totalHits > total) {
-            // console.log('total', total);
-            // console.log('totalHits', pictures.totalHits);
-            // console.log('pictures', pictures);
             this.props.showBtn();
           } else {
             this.props.hideBtn();
@@ -59,10 +54,8 @@ class ImageGallery extends Component {
         })
         .catch(error => this.setState({ error, status: 'rejected' }));
     }
-
-    // console.log(this.state);
-    // console.log(this.state.pictures);
   }
+
   render() {
     const { pictures, error, status } = this.state;
 
@@ -85,11 +78,13 @@ class ImageGallery extends Component {
     if (status === 'resolved' && this.state.pictures.total !== 0) {
       return (
         <ul className={s.ImageGallery}>
-          {pictures.map(({ id, webformatURL }) => (
+          {pictures.map(({ id, webformatURL, largeImageURL }) => (
             <ImageGalletyItem
               key={id}
               src={webformatURL}
               alt={this.props.query}
+              onOpenModal={this.props.onOpenModal}
+              largeImageURL={largeImageURL}
             />
           ))}
         </ul>
@@ -100,28 +95,6 @@ class ImageGallery extends Component {
       return <h1>{error.message}</h1>;
     }
   }
-
-  //
-
-  // return (
-  //   <>
-  //     {error && <h1>{error.message}</h1>}
-  //     {loading && <p>завантажуємо...</p>}
-  //     {!pictures && !loading && <p>Відсутній запит!!!</p>}
-
-  //     {pictures && (
-  //       <ul className={s.ImageGallery}>
-  //         {pictures.hits.map(({ id, webformatURL }) => (
-  //           <ImageGalletyItem
-  //             key={id}
-  //             src={webformatURL}
-  //             alt={this.props.query}
-  //           />
-  //         ))}
-  //       </ul>
-  //     )}
-  //   </>
-  // );
 }
 
 export default ImageGallery;
