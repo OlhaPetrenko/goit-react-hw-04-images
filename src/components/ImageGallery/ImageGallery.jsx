@@ -1,5 +1,7 @@
 // import PropTypes from 'prop-types';
 import { Component } from 'react';
+// import axios from 'axios';
+import { findPicture } from '../shared/api/findPicture';
 
 import ImageGalletyItem from '../ImageGalleryItem/ImageGalleryItem';
 import Loader from '../Loader/Loader';
@@ -18,43 +20,80 @@ class ImageGallery extends Component {
   };
 
   componentDidUpdate(prevProps, prevState) {
-    const { query, page, perPage } = this.props;
-    const total = perPage * this.props.page;
+    const { query, page } = this.props;
 
     if (prevProps.query !== query) {
       this.setState({ pictures: [] });
     }
 
     if (prevProps.query !== query || prevProps.page !== page) {
-      this.setState({ status: 'pending' });
-      this.props.hideBtn();
-      fetch(
-        `https://pixabay.com/api/?q=${query}&page=${page}&key=28740623-faa9572de77969117d7ae64be&image_type=photo&orientation=horizontal&per_page=${perPage}`
-      )
-        .then(res => {
-          if (res.ok) {
-            return res.json();
-          }
-          return Promise.reject(
-            new Error('Виникла помилка пошуку, повторіть спробу згодом')
-          );
-        })
-        .then(pictures => {
-          if (pictures.totalHits > total) {
-            this.props.showBtn();
-          } else {
-            this.props.hideBtn();
-          }
-          this.setState(prevState => {
-            return {
-              pictures: [...prevState.pictures, ...pictures.hits],
-              status: 'resolved',
-            };
-          });
-        })
-        .catch(error => this.setState({ error, status: 'rejected' }));
+      this.fetchPictures();
     }
   }
+  async fetchPictures() {
+    const { query, page, perPage, hideBtn, showBtn } = this.props;
+    const total = perPage * page;
+    this.setState({ status: 'pending' });
+    hideBtn();
+    const response = await findPicture(query, page);
+    // console.log('response', response);
+    try {
+      if (response.data.totalHits > total) {
+        showBtn();
+      } else {
+        hideBtn();
+      }
+      this.setState(prevState => {
+        return {
+          pictures: [...prevState.pictures, ...response.data.hits],
+          status: 'resolved',
+        };
+      });
+    } catch (error) {
+      this.setState({ error, status: 'rejected' });
+    }
+  }
+
+  // =======================
+  // componentDidUpdate(prevProps, prevState) {
+  //   const { query, page, perPage } = this.props;
+  //   const total = perPage * this.props.page;
+
+  //   if (prevProps.query !== query) {
+  //     this.setState({ pictures: [] });
+  //   }
+
+  //   if (prevProps.query !== query || prevProps.page !== page) {
+  //     this.setState({ status: 'pending' });
+  //     this.props.hideBtn();
+  //     fetch(
+  //       `https://pixabay.com/api/?q=${query}&page=${page}&key=28740623-faa9572de77969117d7ae64be&image_type=photo&orientation=horizontal&per_page=${perPage}`
+  //     )
+  //       .then(res => {
+  //         if (res.ok) {
+  //           return res.json();
+  //         }
+  //         return Promise.reject(
+  //           new Error('Виникла помилка пошуку, повторіть спробу згодом')
+  //         );
+  //       })
+  //       .then(pictures => {
+  //         if (pictures.totalHits > total) {
+  //           this.props.showBtn();
+  //         } else {
+  //           this.props.hideBtn();
+  //         }
+  //         this.setState(prevState => {
+  //           return {
+  //             pictures: [...prevState.pictures, ...pictures.hits],
+  //             status: 'resolved',
+  //           };
+  //         });
+  //       })
+  //       .catch(error => this.setState({ error, status: 'rejected' }));
+  //   }
+  // }
+  // ==================================================
 
   render() {
     const { pictures, error, status } = this.state;
