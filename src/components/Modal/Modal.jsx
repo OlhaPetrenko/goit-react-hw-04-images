@@ -9,12 +9,10 @@ const modalEl = document.querySelector('#modal-root');
 class Modal extends Component {
   state = {};
   componentDidMount() {
-    console.log('helo');
     window.addEventListener('keydown', this.hendleKeyDown);
   }
 
   componentWillUnmount() {
-    console.log('0000');
     window.removeEventListener('keydown', this.hendleKeyDown);
   }
 

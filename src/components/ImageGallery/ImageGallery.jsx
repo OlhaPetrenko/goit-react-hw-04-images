@@ -1,6 +1,6 @@
-// import PropTypes from 'prop-types';
+import PropTypes from 'prop-types';
 import { Component } from 'react';
-// import axios from 'axios';
+
 import { findPicture } from '../shared/api/findPicture';
 
 import ImageGalletyItem from '../ImageGalleryItem/ImageGalleryItem';
@@ -9,6 +9,14 @@ import Loader from '../Loader/Loader';
 import s from './ImageGallery.module.css';
 
 class ImageGallery extends Component {
+  static propTypes = {
+    query: PropTypes.string.isRequired,
+    page: PropTypes.number.isRequired,
+    onOpenModal: PropTypes.func.isRequired,
+    hideBtn: PropTypes.func.isRequired,
+    showBtn: PropTypes.func.isRequired,
+  };
+
   static defaultProps = {
     perPage: 12,
   };

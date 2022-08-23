@@ -42,7 +42,6 @@ class App extends Component {
   };
 
   toggleModal = largeImageURL => {
-    console.log('largeImageURL', largeImageURL);
     this.setState(prevState => {
       return {
         showModal: !prevState.showModal,
