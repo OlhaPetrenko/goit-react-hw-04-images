@@ -1,40 +1,42 @@
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-// import PropTypes from 'prop-types';
+import PropTypes from 'prop-types';
 
 import s from './Modal.module.css';
 
 const modalEl = document.querySelector('#modal-root');
 
-class Modal extends Component {
-  state = {};
-  componentDidMount() {
-    window.addEventListener('keydown', this.hendleKeyDown);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.hendleKeyDown);
-  }
-
-  hendleKeyDown = event => {
-    if (event.code === 'Escape') {
-      this.props.onCloseModal();
+function Modal({ onCloseModal, children }) {
+  useEffect(() => {
+    function hendleKeyDown(event) {
+      if (event.code === 'Escape') {
+        onCloseModal();
+      }
     }
-  };
-  hendleOverlayClick = event => {
+
+    window.addEventListener('keydown', hendleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', hendleKeyDown);
+    };
+  }, [onCloseModal]);
+
+  function hendleOverlayClick(event) {
     if (event.currentTarget === event.target) {
-      this.props.onCloseModal();
+      onCloseModal();
     }
-  };
-
-  render() {
-    return createPortal(
-      <div className={s.Overlay} onClick={this.hendleOverlayClick}>
-        <div className={s.Modal}>{this.props.children}</div>
-      </div>,
-      modalEl
-    );
   }
+
+  return createPortal(
+    <div className={s.Overlay} onClick={hendleOverlayClick}>
+      <div className={s.Modal}>{children}</div>
+    </div>,
+    modalEl
+  );
 }
+Modal.propTypes = {
+  onCloseModal: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
 
 export default Modal;

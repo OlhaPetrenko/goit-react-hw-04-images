@@ -1,147 +1,83 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import { findPicture } from '../shared/api/findPicture';
-
 import ImageGalletyItem from '../ImageGalleryItem/ImageGalleryItem';
 import Loader from '../Loader/Loader';
-
 import s from './ImageGallery.module.css';
 
-class ImageGallery extends Component {
-  static propTypes = {
-    query: PropTypes.string.isRequired,
-    page: PropTypes.number.isRequired,
-    onOpenModal: PropTypes.func.isRequired,
-    hideBtn: PropTypes.func.isRequired,
-    showBtn: PropTypes.func.isRequired,
-  };
+function ImageGallery({ query, page, showBtn, hideBtn, onOpenModal }) {
+  const [pictures, setPictures] = useState([]);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('idle');
 
-  static defaultProps = {
-    perPage: 12,
-  };
-
-  state = {
-    pictures: [],
-    error: null,
-    status: 'idle',
-  };
-
-  componentDidUpdate(prevProps, prevState) {
-    const { query, page } = this.props;
-
-    if (prevProps.query !== query) {
-      this.setState({ pictures: [] });
+  useEffect(() => {
+    if (query === '') {
+      return;
     }
+    async function fetchPictures() {
+      const perPage = 12;
+      const total = perPage * page;
 
-    if (prevProps.query !== query || prevProps.page !== page) {
-      this.fetchPictures();
-    }
-  }
-  async fetchPictures() {
-    const { query, page, perPage, hideBtn, showBtn } = this.props;
-    const total = perPage * page;
-    this.setState({ status: 'pending' });
-    hideBtn();
-    const response = await findPicture(query, page);
-    // console.log('response', response);
-    try {
-      if (response.data.totalHits > total) {
-        showBtn();
-      } else {
-        hideBtn();
+      hideBtn();
+
+      try {
+        setStatus('pending');
+        const response = await findPicture(query, page);
+        if (response.data.totalHits > total) {
+          showBtn();
+        } else {
+          hideBtn();
+        }
+        setPictures(prevState =>
+          page > 1 ? [...prevState, ...response.data.hits] : response.data.hits
+        );
+        setStatus('resolved');
+      } catch (error) {
+        setError(error);
+        setStatus('rejected');
       }
-      this.setState(prevState => {
-        return {
-          pictures: [...prevState.pictures, ...response.data.hits],
-          status: 'resolved',
-        };
-      });
-    } catch (error) {
-      this.setState({ error, status: 'rejected' });
-    }
-  }
-
-  // =======================
-  // componentDidUpdate(prevProps, prevState) {
-  //   const { query, page, perPage } = this.props;
-  //   const total = perPage * this.props.page;
-
-  //   if (prevProps.query !== query) {
-  //     this.setState({ pictures: [] });
-  //   }
-
-  //   if (prevProps.query !== query || prevProps.page !== page) {
-  //     this.setState({ status: 'pending' });
-  //     this.props.hideBtn();
-  //     fetch(
-  //       `https://pixabay.com/api/?q=${query}&page=${page}&key=28740623-faa9572de77969117d7ae64be&image_type=photo&orientation=horizontal&per_page=${perPage}`
-  //     )
-  //       .then(res => {
-  //         if (res.ok) {
-  //           return res.json();
-  //         }
-  //         return Promise.reject(
-  //           new Error('Виникла помилка пошуку, повторіть спробу згодом')
-  //         );
-  //       })
-  //       .then(pictures => {
-  //         if (pictures.totalHits > total) {
-  //           this.props.showBtn();
-  //         } else {
-  //           this.props.hideBtn();
-  //         }
-  //         this.setState(prevState => {
-  //           return {
-  //             pictures: [...prevState.pictures, ...pictures.hits],
-  //             status: 'resolved',
-  //           };
-  //         });
-  //       })
-  //       .catch(error => this.setState({ error, status: 'rejected' }));
-  //   }
-  // }
-  // ==================================================
-
-  render() {
-    const { pictures, error, status } = this.state;
-
-    if (status === 'idle') {
-      return <h2 className={s.Text}>Відсутній запит!!!</h2>;
     }
 
-    if (status === 'pending') {
-      return <Loader />;
-    }
+    fetchPictures();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, query]);
 
-    if (status === 'resolved' && this.state.pictures.length === 0) {
-      return (
+  return (
+    <>
+      {status === 'idle' && <h2 className={s.Text}>Відсутній запит!!!</h2>}
+
+      {status === 'pending' && <Loader />}
+      {status === 'resolved' && pictures.length === 0 && (
         <h2 className={s.Text}>
           На жаль, немає зображень, які відповідають Вашому пошуковому запиту.
           Будь ласка, спробуйте ще раз!
         </h2>
-      );
-    }
-    if (status === 'resolved' && this.state.pictures.total !== 0) {
-      return (
+      )}
+      {status === 'resolved' && pictures.total !== 0 && (
         <ul className={s.ImageGallery}>
           {pictures.map(({ id, webformatURL, largeImageURL }) => (
             <ImageGalletyItem
               key={id}
               src={webformatURL}
-              alt={this.props.query}
-              onOpenModal={this.props.onOpenModal}
+              alt={query}
+              onOpenModal={onOpenModal}
               largeImageURL={largeImageURL}
             />
           ))}
         </ul>
-      );
-    }
-
-    if (status === 'rejected') {
-      return <h1>{error.message}</h1>;
-    }
-  }
+      )}
+      {status === 'rejected' && <h1>{error.message}</h1>}
+    </>
+  );
 }
+
+ImageGallery.propTypes = {
+  query: PropTypes.string.isRequired,
+  page: PropTypes.number.isRequired,
+  onOpenModal: PropTypes.func.isRequired,
+  hideBtn: PropTypes.func.isRequired,
+  showBtn: PropTypes.func.isRequired,
+};
 
 export default ImageGallery;
